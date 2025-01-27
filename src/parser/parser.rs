@@ -4,7 +4,7 @@ use nom::{
     character::complete::{char, digit1, line_ending, space0, space1},
     combinator::{map, map_res, opt},
     multi::{many0, many1, separated_list0, separated_list1},
-    sequence::{delimited, preceded, tuple,pair},
+    sequence::{delimited, pair, preceded, tuple},
     IResult,
 };
 
@@ -24,7 +24,6 @@ fn integer(input: &str) -> IResult<&str, Expression> {
         pair(opt(preceded(space0, char('-'))), preceded(space0, digit1)),
         |(sign, digits): (Option<char>, &str)| {
             digits.parse::<i32>().map(|num| {
-
                 if sign.is_some() {
                     Expression::CInt(-num)
                 } else {
@@ -348,8 +347,6 @@ mod tests {
             _ => panic!("Expected Assignment"),
         }
     }
-
-    
 
     #[test]
     fn test_multiline_with_if() {
