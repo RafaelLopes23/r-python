@@ -4,7 +4,7 @@ use nom::{
     character::complete::{char, digit1, line_ending, space0, space1},
     combinator::{map, map_res, opt},
     multi::{many0, many1, separated_list0, separated_list1},
-    sequence::{delimited, preceded, tuple},
+    sequence::{delimited, preceded, tuple,pair},
     IResult,
 };
 
@@ -20,7 +20,19 @@ fn identifier(input: &str) -> IResult<&str, Name> {
 
 // Parse integer literals
 fn integer(input: &str) -> IResult<&str, Expression> {
-    map_res(digit1, |s: &str| s.parse::<i32>().map(Expression::CInt))(input)
+    map_res(
+        pair(opt(preceded(space0, char('-'))), preceded(space0, digit1)),
+        |(sign, digits): (Option<char>, &str)| {
+            digits.parse::<i32>().map(|num| {
+
+                if sign.is_some() {
+                    Expression::CInt(-num)
+                } else {
+                    Expression::CInt(num)
+                }
+            })
+        },
+    )(input)
 }
 
 //term parser for arithmetic
@@ -293,6 +305,24 @@ mod tests {
     }
 
     #[test]
+    fn test_simple_negative_assignment() {
+        let input = "x = -10";
+        let (rest, stmt) = assignment(input).unwrap();
+        assert_eq!(rest, "");
+        match stmt {
+            Statement::Assignment(name, expr, _type) => {
+                // Added _type
+                assert_eq!(name, "x");
+                match *expr {
+                    Expression::CInt(val) => assert_eq!(val, -10),
+                    _ => panic!("Expected CInt"),
+                }
+            }
+            _ => panic!("Expected Assignment"),
+        }
+    }
+
+    #[test]
     fn test_complete_program() {
         let input = "x = 10\nif x > 5:\n    y = 1\nelse:\n    y = 2";
         let (rest, stmts) = parse(input).unwrap();
@@ -318,6 +348,8 @@ mod tests {
             _ => panic!("Expected Assignment"),
         }
     }
+
+    
 
     #[test]
     fn test_multiline_with_if() {
