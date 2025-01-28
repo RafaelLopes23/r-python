@@ -422,6 +422,24 @@ mod tests {
     }
 
     #[test]
+    fn test_simple_negative_assignment() {
+        let input = "x = -10";
+        let (rest, stmt) = assignment(input).unwrap();
+        assert_eq!(rest, "");
+        match stmt {
+            Statement::Assignment(name, expr, _type) => {
+                // Added _type
+                assert_eq!(name, "x");
+                match *expr {
+                    Expression::CInt(val) => assert_eq!(val, -10),
+                    _ => panic!("Expected CInt"),
+                }
+            }
+            _ => panic!("Expected Assignment"),
+        }
+    }
+
+    #[test]
     fn test_complete_program() {
         let input = "x = 10\nif x > 5:\n    y = 1\nelse:\n    y = 2";
         let (rest, stmts) = parse(input).unwrap();
